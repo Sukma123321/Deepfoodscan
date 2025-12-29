@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepFood Scan - Analisis Gizi dengan Kamera</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary: #e0f2fe;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --background: #f8fafc;
+            --white: #ffffff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --carbs: #14e1e1;
+            --protein: #d6336c;
+            --fat: #f59e0b;
+            --fiber: #10b981;
+            --vitamin: #8b5cf6;
+            --mineral: #6366f1;
+            --stunting-bg: #0f3c37;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+        }
+
+        .upload-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-option {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--primary-light);
+        }
+
+        .upload-option:hover {
+            background-color: var(--secondary);
+            border-color: var(--primary);
+        }
+
+        .upload-option.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--primary-light);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            background-color: var(--secondary);
+            border-color: var(--primary);
+        }
+
+        #cameraPreview {
+            width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+            object-fit: cover;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .camera-controls {
+            display: none;
+            margin-top: 1rem;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--text);
+        }
+
+        .btn-icon {
+            margin-right: 0.5rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        /* Custom styles for the result section */
+        .result-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .food-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            border: 4px solid var(--white);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .food-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .nutrient-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .progress-name {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .progress-value {
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background-color: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .carbs-fill { background-color: var(--carbs); }
+        .protein-fill { background-color: var(--protein); }
+        .fat-fill { background-color: var(--fat); }
+        .fiber-fill { background-color: var(--fiber); }
+        .vitamin-fill { background-color: var(--vitamin); }
+        .mineral-fill { background-color: var(--mineral); }
+
+        /* Evaluation card */
+        .evaluation-card {
+            background-color: #f1f5f9;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .evaluation-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--stunting-bg);
+            margin-bottom: 0.5rem;
+        }
+
+        .evaluation-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .evaluation-text strong {
+            color: var(--stunting-bg);
+            font-weight: 600;
+        }
+
+        /* Combination card */
+        .combination-card {
+            background: linear-gradient(to right, #d1fae5, #a7f3d0, #6ee7b7);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: var(--stunting-bg);
+        }
+
+        .combination-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .combination-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container {
+                padding: 0.75rem;
+            }
+            
+            .card {
+                padding: 1.25rem;
+            }
+            
+            .upload-options {
+                flex-direction: column;
+            }
+
+            .food-image {
+                width: 150px;
+                height: 150px;
+            }
+
+            .food-name {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Animation for results */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-item {
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .result-item:nth-child(1) { animation-delay: 0.1s; }
+        .result-item:nth-child(2) { animation-delay: 0.2s; }
+        .result-item:nth-child(3) { animation-delay: 0.3s; }
+        .result-item:nth-child(4) { animation-delay: 0.4s; }
+        .result-item:nth-child(5) { animation-delay: 0.5s; }
+        .result-item:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="tagline">Analisis Kandungan Gizi dengan Kamera atau Upload Foto</div>
+        </header>
+
+        <div class="card">
+            <h2 class="card-title">Pilih Metode Input</h2>
+            
+            <div class="upload-options">
+                <div class="upload-option active" id="cameraOption" onclick="selectOption('camera')">
+                    <div class="upload-icon">📷</div>
+                    <div>Gunakan Kamera</div>
+                </div>
+                <div class="upload-option" id="uploadOption" onclick="selectOption('upload')">
+                    <div class="upload-icon">🖼️</div>
+                    <div>Upload Foto</div>
+                </div>
+            </div>
+
+            <div id="cameraSection">
+                <div id="cameraUploadArea" class="upload-area" onclick="triggerCamera()">
+                    <div class="upload-icon">👆</div>
+                    <p class="upload-text"><strong>Klik untuk mengaktifkan kamera</strong></p>
+                    <p class="upload-text">Pastikan makanan terlihat jelas</p>
+                    <video id="cameraPreview" autoplay playsinline></video>
+                    <canvas id="cameraCanvas" style="display: none;"></canvas>
+                </div>
+                
+                <div id="cameraControls" class="camera-controls">
+                    <button id="captureBtn" class="btn">
+                        <span class="btn-icon">📸</span> Ambil Foto
+                    </button>
+                    <button id="retakeBtn" class="btn btn-secondary">
+                        <span class="btn-icon">🔄</span> Ambil Ulang
+                    </button>
+                </div>
+            </div>
+
+            <div id="uploadSection" style="display: none;">
+                <div id="fileUploadArea" class="upload-area">
+                    <div class="upload-icon">🖼️</div>
+                    <p class="upload-text"><strong>Klik untuk mengunggah foto</strong> atau seret dan lepas di sini</p>
+                    <p class="upload-text">Format: JPG, PNG (Maks. 5MB)</p>
+                    <img id="imagePreview" alt="Pratinjau gambar">
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="foodDescription">Deskripsi Makanan (Opsional)</label>
+                <textarea id="foodDescription" placeholder="Contoh: Nasi pecel dengan lauk tempe, sayur kangkung, dan sambal kacang..."></textarea>
+            </div>
+
+            <button id="analyzeBtn" class="btn" disabled>
+                <span class="btn-icon">🔍</span> Analisis dengan AI
+            </button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Menganalisis makanan Anda...</p>
+            <p>AI kami sedang memeriksa kandungan gizi.</p>
+        </div>
+
+        <div id="resultSection" class="card" style="display: none;">
+            <div class="result-header">
+                <img id="resultImage" class="food-image" src="" alt="Foto makanan">
+                <h1 id="foodName" class="food-name">Nama Makanan</h1>
+            </div>
+            
+            <div class="nutrient-section">
+                <h3 class="section-title">Kandungan Gizi</h3>
+                
+                <div class="progress-container result-item">
+                    <div class="progress-label">
+                        <span class="progress-name">Karbohidrat</span>
+                        <span class="progress-value carbs-value">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill carbs-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-container result-item">
+                    <div class="progress-label">
+                        <span class="progress-name">Protein</span>
+                        <span class="progress-value protein-value">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill protein-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-container result-item">
+                    <div class="progress-label">
+                        <span class="progress-name">Lemak</span>
+                        <span class="progress-value fat-value">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill fat-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-container result-item">
+                    <div class="progress-label">
+                        <span class="progress-name">Vitamin</span>
+                        <span class="progress-value fiber-value">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill fiber-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="evaluation-card result-item">
+                <h4 class="evaluation-title">Evaluasi Pencegahan Stunting</h4>
+                <p class="evaluation-text">
+                    Berdasarkan komposisi gizi, makanan ini <strong id="evaluation-text">cukup baik</strong> untuk membantu mencegah stunting pada anak-anak jika dikonsumsi secara tepat dan seimbang.
+                </p>
+            </div>
+            
+            <div class="combination-card result-item">
+                <h4 class="combination-title">Kombinasi dengan Pangan Lokal</h4>
+                <p class="combination-text" id="combination-text">
+                    Kombinasikan menu ini dengan pangan lokal seperti ubi jalar, jagung, dan sayuran hijau untuk meningkatkan asupan gizi dan membantu pencegahan stunting secara efektif.
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            &copy; DeepFood Scan - Teknologi AI untuk Gizi Lebih Baik
+        </footer>
+    </div>
+
+    <script>
+        // Konfigurasi API
+        const GEMINI_API_KEY = "AIzaSyBGXywnksPv6PgcQVPHJaMvhXJiMi5jqjo"; // Ganti dengan API key Gemini Anda
+        const MODEL_NAME = "gemini-2.5-flash";
+
+        // Elemen DOM
+        const cameraOption = document.getElementById('cameraOption');
+        const uploadOption = document.getElementById('uploadOption');
+        const cameraSection = document.getElementById('cameraSection');
+        const uploadSection = document.getElementById('uploadSection');
+        const cameraUploadArea = document.getElementById('cameraUploadArea');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const cameraControls = document.getElementById('cameraControls');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const foodDescription = document.getElementById('foodDescription');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+        const resultImage = document.getElementById('resultImage');
+        const foodName = document.getElementById('foodName');
+        const evaluationText = document.getElementById('evaluation-text');
+        const combinationText = document.getElementById('combination-text');
+
+        // Progress bar elements
+        const carbsFill = document.querySelector('.carbs-fill');
+        const proteinFill = document.querySelector('.protein-fill');
+        const fatFill = document.querySelector('.fat-fill');
+        const fiberFill = document.querySelector('.fiber-fill');
+        const carbsValue = document.querySelector('.carbs-value');
+        const proteinValue = document.querySelector('.protein-value');
+        const fatValue = document.querySelector('.fat-value');
+        const fiberValue = document.querySelector('.fiber-value');
+
+        // Variabel state
+        let selectedOption = 'camera';
+        let stream = null;
+        let capturedImage = null;
+
+        // Event listeners
+        fileUploadArea.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleFileUpload);
+        captureBtn.addEventListener('click', captureImage);
+        retakeBtn.addEventListener('click', retakeImage);
+        analyzeBtn.addEventListener('click', analyzeWithGemini);
+
+        function selectOption(option) {
+            selectedOption = option;
+            
+            if (option === 'camera') {
+                cameraOption.classList.add('active');
+                uploadOption.classList.remove('active');
+                cameraSection.style.display = 'block';
+                uploadSection.style.display = 'none';
+                stopImageUpload();
+            } else {
+                cameraOption.classList.remove('active');
+                uploadOption.classList.add('active');
+                cameraSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+                stopCamera();
+            }
+            
+            resetAnalysisButton();
+        }
+
+        async function triggerCamera() {
+            if (stream) return;
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false 
+                });
+                
+                cameraPreview.srcObject = stream;
+                cameraPreview.style.display = 'block';
+                cameraControls.style.display = 'flex';
+                cameraUploadArea.querySelector('.upload-text').innerHTML = '<strong>Arahkan kamera ke makanan</strong>';
+                
+                // Perbarui tombol analisis
+                checkAnalysisReady();
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin kamera.');
+            }
+        }
+
+        function captureImage() {
+            if (!stream) return;
+            
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraPreview.videoWidth;
+            cameraCanvas.height = cameraPreview.videoHeight;
+            context.drawImage(cameraPreview, 0, 0, cameraCanvas.width, cameraCanvas.height);
+            
+            capturedImage = cameraCanvas.toDataURL('image/jpeg');
+            
+            // Tampilkan pratinjau hasil tangkapan
+            imagePreview.src = capturedImage;
+            imagePreview.style.display = 'block';
+            
+            // Sembunyikan video, tampilkan tombol ambil ulang
+            cameraPreview.style.display = 'none';
+            captureBtn.style.display = 'none';
+            
+            checkAnalysisReady();
+        }
+
+        function retakeImage() {
+            if (!stream) return;
+            
+            capturedImage = null;
+            imagePreview.style.display = 'none';
+            cameraPreview.style.display = 'block';
+            captureBtn.style.display = 'inline-flex';
+            
+            checkAnalysisReady();
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            cameraPreview.srcObject = null;
+            cameraPreview.style.display = 'none';
+            cameraControls.style.display = 'none';
+            capturedImage = null;
+            imagePreview.style.display = 'none';
+            cameraUploadArea.querySelector('.upload-text').innerHTML = '<strong>Klik untuk mengaktifkan kamera</strong><br>Pastikan makanan terlihat jelas';
+        }
+
+        function handleFileUpload(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    checkAnalysisReady();
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function stopImageUpload() {
+            imageInput.value = '';
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+        }
+
+        function checkAnalysisReady() {
+            if (selectedOption === 'camera') {
+                analyzeBtn.disabled = !capturedImage;
+            } else {
+                analyzeBtn.disabled = !imageInput.files.length;
+            }
+        }
+
+        function resetAnalysisButton() {
+            analyzeBtn.disabled = true;
+        }
+
+        async function analyzeWithGemini() {
+            // Tampilkan loading, sembunyikan hasil sebelumnya
+            loading.style.display = 'block';
+            analyzeBtn.disabled = true;
+            resultSection.style.display = 'none';
+            
+            try {
+                let imageBase64;
+                
+                if (selectedOption === 'camera' && capturedImage) {
+                    imageBase64 = capturedImage.split(',')[1]; // Ambil bagian base64 saja
+                    resultImage.src = capturedImage;
+                } else if (selectedOption === 'upload' && imageInput.files.length > 0) {
+                    const file = imageInput.files[0];
+                    imageBase64 = await toBase64(file);
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        resultImage.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    throw new Error('Tidak ada gambar yang dipilih');
+                }
+                
+                const description = foodDescription.value.trim() || "Tidak ada deskripsi tambahan";
+                
+                // Panggil Gemini API
+                const result = await callGeminiAPI(imageBase64, description);
+                
+                // Proses hasil dan tampilkan
+                processAndDisplayResults(result);
+                
+            } catch (error) {
+                console.error('Error analyzing food:', error);
+                alert('Terjadi kesalahan saat menganalisis makanan: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function callGeminiAPI(imageBase64, description) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_ACTUAL_API_KEY") {
+                throw new Error("API Key Gemini belum dikonfigurasi");
+            }
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        {
+                            text: "Anda adalah ahli gizi yang akan menganalisis foto makanan dan deskripsi berikut. " +
+                                  "Berikan analisis kandungan gizi dalam format JSON dengan struktur berikut:\n" +
+                                  "{\n" +
+                                  "  \"food_name\": \"Nama makanan\",\n" +
+                                  "  \"nutrients\": {\n" +
+                                  "    \"carbs\": { \"value\": 0-100, \"description\": \"Deskripsi kandungan karbohidrat\" },\n" +
+                                  "    \"protein\": { \"value\": 0-100, \"description\": \"Deskripsi kandungan protein\" },\n" +
+                                  "    \"fat\": { \"value\": 0-100, \"description\": \"Deskripsi kandungan lemak\" },\n" +
+                                  "    \"fiber\": { \"value\": 0-100, \"description\": \"Deskripsi kandungan Vitamin\" }\n" +
+                                  "  },\n" +
+                                  "  \"stunting_evaluation\": \"Evaluasi apakah makanan ini baik untuk pencegahan stunting\",\n" +
+                                  "  \"food_combination\": \"Saran kombinasi dengan pangan lokal untuk mencegah stunting dalam bentuk point-point\"\n" +
+                                  "}\n" +
+                                  "Gunakan bahasa Indonesia yang jelas dan mudah dimengerti."
+                        },
+                        {
+                            inlineData: {
+                                mimeType: "image/jpeg",
+                                data: imageBase64
+                            }
+                        },
+                        {
+                            text: "Deskripsi makanan: " + description
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.5,
+                    topK: 32,
+                    topP: 0.95,
+                    maxOutputTokens: 4096
+                }
+            };
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'Gagal memproses permintaan ke Gemini API');
+            }
+            
+            const data = await response.json();
+            
+            // Ekstrak teks hasil dari respons Gemini
+            if (data.candidates && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error('Format respons API tidak dikenali');
+            }
+        }
+
+        function processAndDisplayResults(resultText) {
+            try {
+                // Coba parsing JSON dari hasil teks
+                const jsonStart = resultText.indexOf('{');
+                const jsonEnd = resultText.lastIndexOf('}') + 1;
+                const jsonString = resultText.substring(jsonStart, jsonEnd);
+                const result = JSON.parse(jsonString);
+                
+                // Tampilkan nama makanan
+                foodName.textContent = result.food_name || "Makanan Terdeteksi";
+                
+                // Update progress bars dengan animasi
+                animateProgressBar(carbsFill, carbsValue, result.nutrients.carbs.value);
+                animateProgressBar(proteinFill, proteinValue, result.nutrients.protein.value);
+                animateProgressBar(fatFill, fatValue, result.nutrients.fat.value);
+                animateProgressBar(fiberFill, fiberValue, result.nutrients.fiber.value);
+                
+                // Update evaluasi stunting
+                evaluationText.textContent = result.stunting_evaluation || "cukup baik";
+                
+                // Update kombinasi makanan
+                combinationText.textContent = result.food_combination || 
+                    "Kombinasikan dengan pangan lokal seperti sayuran hijau dan sumber protein untuk gizi yang lebih seimbang.";
+                
+                // Tampilkan hasil
+                resultSection.style.display = 'block';
+                resultSection.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error processing results:', error);
+                // Fallback jika parsing JSON gagal
+                displayFallbackResults(resultText);
+            }
+        }
+
+        function animateProgressBar(barElement, valueElement, targetValue) {
+            let currentValue = 0;
+            const increment = targetValue / 20; // 20 frame animation
+            
+            const animate = () => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    currentValue = targetValue;
+                    barElement.style.width = currentValue + '%';
+                    valueElement.textContent = Math.round(currentValue) + '%';
+                    return;
+                }
+                
+                barElement.style.width = currentValue + '%';
+                valueElement.textContent = Math.round(currentValue) + '%';
+                requestAnimationFrame(animate);
+            };
+            
+            animate();
+        }
+
+        function displayFallbackResults(resultText) {
+            // Jika parsing JSON gagal, tampilkan teks langsung
+            foodName.textContent = "Hasil Analisis";
+            
+            // Set nilai default untuk progress bars
+            animateProgressBar(carbsFill, carbsValue, 40);
+            animateProgressBar(proteinFill, proteinValue, 30);
+            animateProgressBar(fatFill, fatValue, 20);
+            animateProgressBar(fiberFill, fiberValue, 10);
+            
+            // Gunakan teks langsung untuk evaluasi
+            evaluationText.textContent = "baik";
+            combinationText.textContent = "Kombinasikan dengan makanan bergizi lain untuk hasil yang lebih optimal.";
+            
+            // Tampilkan teks lengkap di bagian bawah
+            const fullTextDiv = document.createElement('div');
+            fullTextDiv.className = 'result-item';
+            fullTextDiv.innerHTML = `<h3 class="section-title">Detail Analisis</h3><p>${resultText}</p>`;
+            resultSection.appendChild(fullTextDiv);
+            
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Bersihkan kamera saat halaman ditutup
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
